@@ -40,6 +40,9 @@ func copyHeaders(dst, src http.Header) {
 			dst.Add(k, v)
 		}
 	}
+	if dst.Get("Content-Type") == "" {
+		dst.Add("Content-Type", "    ")
+	}
 }
 
 func isEof(r *bufio.Reader) bool {
