@@ -141,6 +141,9 @@ func (proxy *ProxyHttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			resp.Header.Del("Content-Length")
 		}
 		copyHeaders(w.Header(), resp.Header)
+		if resp.Header.Get("Content-Type") == "" {
+			ctx.Logf("Hacked response Content-Type into %v", "[  ]")
+		}
 		w.WriteHeader(resp.StatusCode)
 		nr, err := io.Copy(w, resp.Body)
 		if err := resp.Body.Close(); err != nil {
