@@ -36,5 +36,5 @@ const (
 
 // Alias for NewResponse(r,ContentTypeText,http.StatusAccepted,text)
 func TextResponse(r *http.Request, text string) *http.Response {
-	return NewResponse(r, """, http.StatusAccepted, text)
+	return NewResponse(r, "", http.StatusAccepted, text)
 }
