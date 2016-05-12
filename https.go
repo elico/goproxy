@@ -261,7 +261,12 @@ func copyAndClose(ctx *ProxyCtx, w, r net.Conn) {
 	connOk := true
 	if _, err := io.Copy(w, r); err != nil {
 		connOk = false
-		ctx.Warnf("Error copying to client: %s", err)
+		switch {
+		case strings.Contains(err.Error(), "use of closed network connection"):
+			;;
+		default:
+			ctx.Warnf("Error copying to client: %s", err)
+		}
 	}
 	if err := r.Close(); err != nil && connOk {
 		ctx.Warnf("Error closing: %s", err)
