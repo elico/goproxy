@@ -264,6 +264,8 @@ func copyAndClose(ctx *ProxyCtx, w, r net.Conn) {
 		switch {
 		case strings.Contains(err.Error(), "use of closed network connection"):
 			;;
+		case strings.Contains(err.Error(), "no route to host"):
+			;;
 		default:
 			ctx.Warnf("Error copying to client: %s", err)
 		}
