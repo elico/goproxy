@@ -268,6 +268,10 @@ func copyAndClose(ctx *ProxyCtx, w, r net.Conn) {
 			;;
 		case strings.Contains(err.Error(), "connection reset by peer"):
 			;;
+		case strings.Contains(err.Error(), "connection timed out"):
+			;;
+		case strings.Contains(err.Error(), "broken pipe"):
+			;;
 		default:
 			ctx.Warnf("Error copying to client: %s", err)
 		}
