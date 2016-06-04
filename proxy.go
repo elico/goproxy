@@ -145,12 +145,16 @@ func (proxy *ProxyHttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			ctx.Logf("Hacked response Content-Type into %v", "[  ]")
 		}
 		w.WriteHeader(resp.StatusCode)
-		nr, err := io.Copy(w, resp.Body)
-		if err := resp.Body.Close(); err != nil {
-			ctx.Warnf("Can't close response body %v", err)
+		if resp.Body != nil {
+			nr, err := io.Copy(w, resp.Body)
+			if err := resp.Body.Close(); err != nil {
+				ctx.Warnf("Can't close response body %v", err)
+			}
+			ctx.Logf("Almost Finished response Content-Type %v", resp.Header.Get("Content-Type"))
+			ctx.Logf("Copied %v bytes to client error=%v", nr, err)
+		} else {
+			ctx.Logf("Finished a response without body")
 		}
-		ctx.Logf("Almost Finished response Content-Type %v", resp.Header.Get("Content-Type"))
-		ctx.Logf("Copied %v bytes to client error=%v", nr, err)
 	}
 }
 
