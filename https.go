@@ -98,6 +98,7 @@ func (proxy *ProxyHttpServer) handleHttps(w http.ResponseWriter, r *http.Request
 		}
 		ctx.Logf("Accepting CONNECT to %s", host)
 		proxyClient.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
+
 		go copyAndClose(ctx, targetSiteCon, proxyClient)
 		go copyAndClose(ctx, proxyClient, targetSiteCon)
 	case ConnectHijack:
@@ -197,6 +198,8 @@ func (proxy *ProxyHttpServer) handleHttps(w http.ResponseWriter, r *http.Request
 					ctx.Logf("resp %v", resp.Status)
 				}
 				resp = proxy.filterResponse(resp, ctx)
+				defer resp.Body.Close()
+
 				text := resp.Status
 				statusCode := strconv.Itoa(resp.StatusCode) + " "
 				if strings.HasPrefix(text, statusCode) {
@@ -257,27 +260,35 @@ func httpError(w io.WriteCloser, ctx *ProxyCtx, err error) {
 	}
 }
 
-func copyAndClose(ctx *ProxyCtx, w, r net.Conn) {
-	connOk := true
-	if _, err := io.Copy(w, r); err != nil {
-		connOk = false
+func copyAndClose(ctx *ProxyCtx, dst, src net.Conn) {
+	if _, err := io.Copy(dst, src); err != nil {
 		switch {
 		case strings.Contains(err.Error(), "use of closed network connection"):
-			;;
+
 		case strings.Contains(err.Error(), "no route to host"):
-			;;
+
 		case strings.Contains(err.Error(), "connection reset by peer"):
-			;;
+
 		case strings.Contains(err.Error(), "connection timed out"):
-			;;
+
 		case strings.Contains(err.Error(), "broken pipe"):
-			;;
+
 		default:
+
 			ctx.Warnf("Error copying to client: %s", err)
 		}
 	}
-	if err := r.Close(); err != nil && connOk {
-		ctx.Warnf("Error closing: %s", err)
+
+	closeWrite(dst)
+	closeWrite(src)
+}
+
+func closeWrite(c net.Conn) {
+	// Close the write half of the connnection only if the underlying type supports it.
+	if cw, ok := c.(closeWriter); ok {
+		cw.CloseWrite()
+	} else {
+		c.Close()
 	}
 }
 
@@ -380,4 +391,8 @@ func TLSConfigFromCA(ca *tls.Certificate) func(host string, ctx *ProxyCtx) (*tls
 		config.Certificates = append(config.Certificates, cert)
 		return &config, nil
 	}
+}
+
+type closeWriter interface {
+	CloseWrite() error
 }
